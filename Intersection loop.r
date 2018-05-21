@@ -48,10 +48,10 @@
   #----------------------------------------------------------------------------------
   
     # Top layer shapefile (larger area) - e.g. LGA
-    top <- st_read("./Custom/Townships.shp")
+    top <- st_read("./LGA/LGA_2016_AUST.shp")
     
     # Bottom layer shapefile (smaller areas) - e.g. SA2s
-    bottom <- st_read("./SA1/SA1_2016_AUST.shp")
+    bottom <- st_read("./MB/MB_2016_VIC.shp")
   
   #----------------------------------------------------------------------------------
   # Check coordinate reference systems of both layers is the same - project if not
@@ -63,10 +63,10 @@
   # Selection variable names
   #----------------------------------------------------------------------------------    
     
-    top.var <- "Zone.Name"
+    top.var <- "LGA_NAME16"
     top.varQ <- quo(!! rlang::sym(top.var))
     
-    bottom.var <- "SA1_7DIG16"
+    bottom.var <- "MB_CODE16"
     bottom.varQ <- quo(!! rlang::sym(bottom.var))
 
   #----------------------------------------------------------------------------------
@@ -76,6 +76,7 @@
     # Create a vector of all items to loop through
     list.vector <- top  %>% st_set_geometry(NULL) %>% select(!! top.varQ) %>% arrange(!! top.varQ) %>% unlist()
     list.vector <- list.vector %>% unname()
+    list.vector <- "Greater Bendigo (C)"
     
     # Create a data frame to save results
     output <- data.frame(matrix(ncol = 3, nrow = 0))
@@ -120,29 +121,29 @@
       output <- bind_rows(output, temp)
       assign(paste0("_", selection), temp)
 
-      # Calculate centroids for bottom (int region) labels
-      bottom.select$centroid <- st_centroid(st_geometry(bottom.select))
-
-      # Create nice plots
-      g1 <- ggplot() +
-              geom_sf(data = top, colour = "grey75", fill = "grey95") +
-              geom_sf(data = top.select, colour = "red", size = 0.5, fill = "red", alpha = 0.15) #+
-              #labs(title = paste("Mornington peninsula townships:", selection))
-              #ggsave(paste0(selection, "_i.png"), units = "cm", width = 12, height = 8, dpi = 300)
-
-      g2 <- ggplot() +
-              geom_sf(data = bottom.select, colour = "grey75", fill = "grey95") +
-              geom_sf(data = top.select, colour = "red", size = 0.5, fill = "red", alpha = 0.15) +
-              geom_point(data = st_coordinates(bottom.select$centroid) %>% as.data.frame, aes(x = X, y = Y)) +
-              geom_text_repel(data = st_coordinates(bottom.select$centroid) %>% as.data.frame,
-                              aes(x = X, y = Y, label = bottom.select$SA1_7DIG16), box.padding = 0.75, size = 2.5, force = 5) +
-              labs(title = paste("Mornington peninsula townships:", selection),
-                   subtitle = "These SA1s at least partially fall within the selected township zone")
-              #ggsave(paste0(selection, "_ii.png"), units = "cm", width = 24, height = 16, dpi = 300)
-      
-      print(ggarrange(g2, g1, nrow = 2))
-      ggsave(paste0(selection, "_iii.png"), units = "cm", width = 24, height = 24, dpi = 300)
-      Sys.sleep(1)
+      # # Calculate centroids for bottom (int region) labels
+      # bottom.select$centroid <- st_centroid(st_geometry(bottom.select))
+      # 
+      # # Create nice plots
+      # g1 <- ggplot() +
+      #         geom_sf(data = top, colour = "grey75", fill = "grey95") +
+      #         geom_sf(data = top.select, colour = "red", size = 0.5, fill = "red", alpha = 0.15) #+
+      #         #labs(title = paste("Mornington peninsula townships:", selection))
+      #         #ggsave(paste0(selection, "_i.png"), units = "cm", width = 12, height = 8, dpi = 300)
+      # 
+      # g2 <- ggplot() +
+      #         geom_sf(data = bottom.select, colour = "grey75", fill = "grey95") +
+      #         geom_sf(data = top.select, colour = "red", size = 0.5, fill = "red", alpha = 0.15) +
+      #         geom_point(data = st_coordinates(bottom.select$centroid) %>% as.data.frame, aes(x = X, y = Y)) +
+      #         geom_text_repel(data = st_coordinates(bottom.select$centroid) %>% as.data.frame,
+      #                         aes(x = X, y = Y, label = bottom.select$SA1_7DIG16), box.padding = 0.75, size = 2.5, force = 5) +
+      #         labs(title = paste("Mornington peninsula townships:", selection),
+      #              subtitle = "These SA1s at least partially fall within the selected township zone")
+      #         #ggsave(paste0(selection, "_ii.png"), units = "cm", width = 24, height = 16, dpi = 300)
+      # 
+      # print(ggarrange(g2, g1, nrow = 2))
+      # ggsave(paste0(selection, "_iii.png"), units = "cm", width = 24, height = 24, dpi = 300)
+      # Sys.sleep(1)
       
     }
 

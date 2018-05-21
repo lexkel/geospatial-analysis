@@ -21,7 +21,7 @@
       library(tidyverse)
       
       # Set directory
-      setwd("C:/Users/a.kelly/Documents/Projects/Custom geography datasets") 
+      setwd("C:/Users/a.kelly/Documents/Projects/_Github/geospatial-analysis/custom geo datasets") 
       
     #----------------------------------------------------------------------------------
     # Import data

@@ -1,7 +1,7 @@
   
   #==================================================================================
   #
-  # Spatial shape comparison - single top layer region
+  # Spatial shape comparison - single top layer region, exports table builder csv
   #
   #  - Determine what lower grade shapes fall within a higher grade shape.
   #  - Example here is Lake Macquarie LGA and which SA2s comprise it.
@@ -47,11 +47,11 @@
   #----------------------------------------------------------------------------------
   
     # Top layer shapefile (larger area) - e.g. LGA
-    top <- st_read("./Custom/Lilydale.shp")
+    top <- st_read("./Custom/bendigo_eic.shp")
     #top <- top %>% filter(LGA_NAME16 == "Yarra Ranges (S)")
     
     # Bottom layer shapefile (smaller areas) - e.g. SA2s
-    bottom <- st_read("./SA1/SA1_2016_AUST.shp")
+    bottom <- st_read("./MB/MB_2016_VIC.shp")
   
   #----------------------------------------------------------------------------------
   # Check coordinate reference systems of both layers is the same - project if not
@@ -63,9 +63,9 @@
   # Selection variable names
   #----------------------------------------------------------------------------------    
   
-    top.region.name = "Lilydale"
-    bottom.region.area = "SA1"
-    bottom.var <- "SA1_7DIG16"
+    top.region.name = "Bendigo EIC"
+    bottom.region.area = "MB"
+    bottom.var <- "MB_CODE16"
     bottom.varQ <- quo(!! rlang::sym(bottom.var))
     type = "POUR"
   
@@ -114,31 +114,31 @@
         labs(title = top.region.name,
              subtitle = "")
     
-      # Bottom
-      ggplot() +
-        geom_sf(data = bottom.select, colour = "grey75", fill = "grey95") +
-        geom_sf(data = top, colour = "red", size = 0.5, fill = "red", alpha = 0.15) +
-        geom_point(data = st_coordinates(bottom.select$centroid) %>% as.data.frame, aes(x = X, y = Y)) +
-        geom_text_repel(data = st_coordinates(bottom.select$centroid) %>% as.data.frame,
-        aes(x = X, y = Y, label = bottom.select$SA1_7DIG16), box.padding = 0.75, size = 2.5, force = 5) +
-        labs(title = top.region.name,
-             subtitle = paste0("These ", bottom.region.area, " at least partially fall within the ", top.region.name))
-    
-      # Overlapping areas
-      overlapping <- int %>% filter(overlap.pct < 100) %>% select(DZN_CODE16)
-      st_geometry(overlapping) <- NULL
-      overlapping <- overlapping %>% unlist() %>% as.vector()
-      overlapping.centroid <- bottom.select %>% filter(DZN_CODE16 %in% overlapping)
-      st_geometry(overlapping.centroid) <- NULL
-      
-      ggplot() +
-        geom_sf(data = bottom.select %>% filter(DZN_CODE16 %in% overlapping), colour = "grey50", fill = "grey95") +
-        geom_sf(data = top, colour = "red", size = 0.5, fill = "red", alpha = 0.15) +
-        geom_point(data = st_coordinates(overlapping.centroid$centroid) %>% as.data.frame, aes(x = X, y = Y)) +
-        geom_text_repel(data = st_coordinates(overlapping.centroid$centroid) %>% as.data.frame,
-        aes(x = X, y = Y, label = overlapping.centroid$DZN_CODE16), box.padding = 0.75, size = 2.5, force = 5) +
-        labs(title = top.region.name,
-             subtitle = paste0("The overlapping ", bottom.region.area, " within ", top.region.name))
+      # # Bottom
+      # ggplot() +
+      #   geom_sf(data = bottom.select, colour = "grey75", fill = "grey95") +
+      #   geom_sf(data = top, colour = "red", size = 0.5, fill = "red", alpha = 0.15) +
+      #   geom_point(data = st_coordinates(bottom.select$centroid) %>% as.data.frame, aes(x = X, y = Y)) +
+      #   geom_text_repel(data = st_coordinates(bottom.select$centroid) %>% as.data.frame,
+      #   aes(x = X, y = Y, label = bottom.select$SA1_7DIG16), box.padding = 0.75, size = 2.5, force = 5) +
+      #   labs(title = top.region.name,
+      #        subtitle = paste0("These ", bottom.region.area, " at least partially fall within the ", top.region.name))
+      # 
+      # # Overlapping areas
+      # overlapping <- int %>% filter(overlap.pct < 100) %>% select(!! bottom.varQ)
+      # st_geometry(overlapping) <- NULL
+      # overlapping <- overlapping %>% unlist() %>% as.vector()
+      # overlapping.centroid <- bottom.select %>% filter(!! bottom.varQ %in% overlapping)
+      # st_geometry(overlapping.centroid) <- NULL
+      # 
+      # ggplot() +
+      #   geom_sf(data = bottom.select %>% filter(!! bottom.varQ %in% overlapping), colour = "grey50", fill = "grey95") +
+      #   geom_sf(data = top, colour = "red", size = 0.5, fill = "red", alpha = 0.15) +
+      #   geom_point(data = st_coordinates(overlapping.centroid$centroid) %>% as.data.frame, aes(x = X, y = Y)) +
+      #   geom_text_repel(data = st_coordinates(overlapping.centroid$centroid) %>% as.data.frame,
+      #   aes(x = X, y = Y, label = overlapping.centroid$MB_CODE16), box.padding = 0.75, size = 2.5, force = 5) +
+      #   labs(title = top.region.name,
+      #        subtitle = paste0("The overlapping ", bottom.region.area, " within ", top.region.name))
 
     # Save to excel file
     write_xlsx(output, "output.xlsx")
@@ -150,7 +150,7 @@
     # Table builder custom geography
     table_builder <- data.frame("FactTableCode" = rep("Person Records", length(output$Region)),
                                 "FactTableName" = rep(if(type == "POW") {"Persons Aged 15 Years and Over, Place of Work"} 
-                                                      else if(type == "POUR") {"Persons, Place of Usual Residence"}, 
+                                                      else if(type == "POUR") {"Persons Place of Usual Residence"}, 
                                                       length(output$Region)),
                                 "FieldCode"     = rep(if(type == "POW") {"2189354"} 
                                                       else if(type == "POUR") {"2152296"}, 
