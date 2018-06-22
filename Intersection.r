@@ -47,7 +47,7 @@
   #----------------------------------------------------------------------------------
   
     # Top layer shapefile (larger area) - e.g. LGA
-    top <- st_read("./Custom/bendigo_eic.shp")
+    top <- st_read("./LGA/LGA_2016_AUST.shp")
     #top <- top %>% filter(LGA_NAME16 == "Yarra Ranges (S)")
     
     # Bottom layer shapefile (smaller areas) - e.g. SA2s
@@ -63,7 +63,7 @@
   # Selection variable names
   #----------------------------------------------------------------------------------    
   
-    top.region.name = "Bendigo EIC"
+    top.region.name = "Geelong SA4 outside Geelong LGA"
     bottom.region.area = "MB"
     bottom.var <- "MB_CODE16"
     bottom.varQ <- quo(!! rlang::sym(bottom.var))
