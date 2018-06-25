@@ -47,23 +47,78 @@
       # LGA layer shapefile
       STE <- st_read("./STE/STE_2016_AUST.shp") %>% st_transform(crs = 4283)
       LGA <- st_read("./LGA/LGA_2016_AUST.shp") %>% st_transform(crs = 4283)
-      VIC <- LGA %>% filter(STE_CODE16 == 2)
       
-      # Capital city
-      MLB <- VIC %>% filter(LGA_NAME16 == "Melbourne (C)")
-      MLB.point <- st_centroid(MLB)
+    #----------------------------------------------------------------------------------
+    # Calculate distances between LGA centroids and capital city centroid
+    #----------------------------------------------------------------------------------  
+    
+      # Capital cities
+      capital.cities <- LGA %>% 
+                          filter(LGA_NAME16 %in% c("Sydney (C)", "Melbourne (C)", "Brisbane (C)", "Adelaide (C)", "Perth (C)", 
+                                                   "Hobart (C)", "Darwin (C)", "Unincorporated ACT"))
+      capital.cities <- st_centroid(capital.cities)
+
+      # LGA centroid - drop empty polygons for "No usual address" and "Migratory - Offshore - Shipping" zones
+      LGA <- LGA[!st_is_empty(LGA),]
+      LGA.points <- st_centroid(LGA)
+
+      dist.from.capital.cities <- map_df(c(1:8), function(x) {
+        x <- capital.cities[x,]
+        y <- LGA.points %>% filter(STE_CODE16 == x$STE_CODE16)
+        z <- st_distance(x, y)
+        z <- data.frame(LGA_CODE16 = LGA.points %>% filter(STE_CODE16 == x$STE_CODE16) %>% select(LGA_CODE16) %>% st_set_geometry(NULL) %>% unname() %>% unlist(),
+                        State = x$STE_CODE16,
+                        Distance = as.vector(z))
+      })
       
-      # LGA centroid - drop empty polygons for No usual address and Migratory ...
-      VIC <- VIC[!st_is_empty(VIC),]
-      VIC.points <- st_centroid(VIC)
-        
-      # Plot map with joining great circles lines
-      # https://www.jessesadler.com/post/great-circles-sp-sf/
+    #----------------------------------------------------------------------------------
+    # Plot distances between LGA centroids and capital city centroid by state
+    #----------------------------------------------------------------------------------    
+      
+      state <- 2
+      
+      geo <- LGA.points %>% 
+              filter(STE_CODE16 == state)
+      
+      councils <- LGA.points %>% 
+                    filter(STE_CODE16 == state) %>%
+                    mutate(id = row_number()) %>%
+                    st_set_geometry(NULL)
+      
+      capital <- capital.cities %>% 
+                  filter(STE_CODE16 == state) %>% 
+                  slice(rep(1, each = nrow(councils))) %>% 
+                  mutate(id = 1:nrow(councils)) %>% 
+                  st_set_geometry(NULL)
+      
+      points <- capital %>% 
+                  bind_rows(councils) %>%
+                  left_join(geo)
+      
+      lines <- st_as_sf(points) %>% 
+                  group_by(id) %>% 
+                  summarise(do_union = FALSE) %>% 
+                  st_cast("LINESTRING") 
+      
+      councils <- councils %>% left_join(geo)
+      
+      capital <- capital %>% left_join(geo)
+      
+      furthest <- councils %>% 
+                    filter(LGA_CODE16 == dist.from.capital.cities %>% 
+                             filter(State == state) %>% 
+                             filter(Distance == max(Distance)) %>% 
+                             select(LGA_CODE16) %>% 
+                             unlist())
+      
+      # Plot map with centroids
       ggplot() +
-         geom_sf(data = STE %>% filter(STE_CODE16 == 2), colour = "grey75", fill = "grey95") +
-         geom_sf(data = MLB.point, colour = "red", size = 1.5) +
-         geom_sf(data = VIC.points, colour = "grey25", size = 1.5)
-      
-      distances <- MLB.point %>% st_distance(VIC.points)
-      distances
-      
+        geom_sf(data = STE %>% filter(STE_CODE16 == state), colour = "grey75", fill = "grey95") +
+        geom_sf(data = LGA %>% filter(STE_CODE16 == state), colour = "grey75", fill = "grey95") +
+        geom_sf(data = lines, colour = "grey70", alpha = 0.5) +
+        geom_sf(data = councils, colour = "grey25", size = 1.5) +
+        geom_sf(data = capital, colour = "red", size = 3) +
+        geom_sf(data = furthest, colour = "blue", size = 3)
+        #labs(title = STE %>% filter(STE_CODE16 == state) %>% select(STE_NAME16) %>% st_set_geometry(NULL) %>% unlist())
+
+                                             
