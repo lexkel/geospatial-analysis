@@ -44,7 +44,7 @@
   }
   
   x <- x %>% 
-        group_by(LGA_CODE16) %>% 
+        group_by(LGA_CODE16, LGA_NAME16) %>% 
         summarise(Remoteness_code = getmode(Remoteness)) %>%
         mutate(Remoteness_area = case_when(Remoteness_code == 5 ~ "Very Remote Australia",
                                            Remoteness_code == 4 ~ "Remote Australia",
